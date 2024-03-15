@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orderapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orderapp
+  template:
+    metadata:
+      labels:
+        app: orderapp
+    spec:
+      containers:
+        - name: orderapp
+          image: jmatharu2/order-service:0.0.latest2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9094
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Djdk.tls.client.protocols=TLSv1.2"
+            - name: SPRING_DATA_MONGODB_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: configmap
+                  key: orderdb_url
+            - name: SPRING_DATA_MONGODB_DATABASE
+              value: "orderdb"
+            - name: EUREKA_SERVER_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: configmap
+                  key: eureka_service_address
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+spec:
+  selector:
+    app: orderapp
+  ports:
+    - protocol: TCP
+      port: 9094
+      targetPort: 9094
